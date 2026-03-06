@@ -46,8 +46,30 @@ export default function VideoFeed({ isMuted, showDetails, videos, users, activeV
             ref={containerRef}
             className="video-feed no-scrollbar smooth-scroll"
         >
+            {/* Landing Hero Image (Index 0) */}
+            <div className="video-container" style={{ backgroundColor: '#000' }}>
+                <div className="video-bg-wrapper">
+                    <img
+                        src="https://i.ibb.co/jP8zs7LN/Gemini-Generated-Image-qchnvaqchnvaqchn-1.jpg"
+                        alt="SoulJourney Home"
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                    <div className="video-gradient-overlay" />
+                </div>
+
+                {/* Scroll Indicator Prompt (Bottom) */}
+                <div style={{ position: 'absolute', bottom: '6rem', left: '50%', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', zIndex: 20 }}>
+                    <div style={{ opacity: 0.9 }} className="animate-pulse-pin">
+                        <span style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.9)', textShadow: '0 2px 4px rgba(0,0,0,0.8)', fontWeight: 500, letterSpacing: '0.05em' }}>Scroll down to explore</span>
+                        <br />
+                        <span style={{ fontSize: '1.75rem', color: '#00f3ff', textShadow: '0 0 10px rgba(0,243,255,0.8)' }}>↓</span>
+                    </div>
+                </div>
+            </div>
+
             {videos.map((video, index) => {
-                const isActive = index === activeVideoIndex;
+                const actualIndex = index + 1;
+                const isActive = actualIndex === activeVideoIndex;
                 // Map userIds to actual User objects for this video
                 const videoUsers = video.userIds.map(id => users.find(u => u.id === id)).filter(Boolean) as User[];
 
@@ -77,6 +99,17 @@ export default function VideoFeed({ isMuted, showDetails, videos, users, activeV
                     </div>
                 );
             })}
+
+            {/* Empty State when no videos are added by admin */}
+            {videos.length === 0 && (
+                <div className="video-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0f172a' }}>
+                    <div className="glass-panel" style={{ padding: '3rem', textAlign: 'center', maxWidth: '400px' }}>
+                        <h2 style={{ fontSize: '2rem', marginBottom: '1rem', color: '#f8fafc' }}>The Void is Empty</h2>
+                        <p style={{ color: '#94a3b8', marginBottom: '0.5rem' }}>There are currently no soul journeys recorded.</p>
+                        <p style={{ color: '#94a3b8' }}>Please add new videos via the Admin Dashboard.</p>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

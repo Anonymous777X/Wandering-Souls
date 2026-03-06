@@ -15,25 +15,27 @@ export default function Home() {
   // Track currently viewed video
   const [activeVideoIndex, setActiveVideoIndex] = useState(0);
 
-  // Derived state for the Photos tab
-  const activeVideo = initialVideos[activeVideoIndex];
+  // Derived state for the Photos tab (offset by 1 due to landing image at index 0)
+  const activeVideo = activeVideoIndex > 0 ? initialVideos[activeVideoIndex - 1] : undefined;
   const videoUsers = activeVideo ? activeVideo.userIds.map(id => initialUsers.find(u => u.id === id)).filter(Boolean) as typeof initialUsers : [];
   const videoPhotos = activeVideo ? initialPhotos.filter(p => p.videoId === activeVideo.id) : [];
 
   return (
     <main className="app-main">
-      {/* Top Bar for Global Controls */}
-      <div className="top-bar">
-        {activeTab === 'Videos' && (
-          <button
-            onClick={() => setIsMuted(!isMuted)}
-            className="glass-panel icon-btn animate-breathe"
-            aria-label={isMuted ? "Unmute" : "Mute"}
-          >
-            {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
-          </button>
-        )}
-      </div>
+      {/* Top Bar for Global Controls - Hidden on Landing Page */}
+      {(activeTab !== 'Videos' || activeVideoIndex > 0) && (
+        <div className="top-bar">
+          {activeTab === 'Videos' && (
+            <button
+              onClick={() => setIsMuted(!isMuted)}
+              className="glass-panel icon-btn animate-breathe"
+              aria-label={isMuted ? "Unmute" : "Mute"}
+            >
+              {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+            </button>
+          )}
+        </div>
+      )}
 
       {activeTab === 'Videos' && (
         <VideoFeed
@@ -65,12 +67,15 @@ export default function Home() {
         </div>
       )}
 
-      <BottomNav
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        showDetails={showDetails}
-        setShowDetails={setShowDetails}
-      />
+      {/* Bottom Navigation - Hidden on Landing Page */}
+      {(activeTab !== 'Videos' || activeVideoIndex > 0) && (
+        <BottomNav
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          showDetails={showDetails}
+          setShowDetails={setShowDetails}
+        />
+      )}
     </main>
   );
 }

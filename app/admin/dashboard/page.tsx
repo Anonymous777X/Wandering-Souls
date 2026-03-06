@@ -17,6 +17,11 @@ export default function AdminDashboard() {
     const [videos, setVideos] = useState<Video[]>(initialVideos);
     const [photos, setPhotos] = useState<Photo[]>(initialPhotos);
 
+    // Bulk Deletion States
+    const [selectedUsersToDelete, setSelectedUsersToDelete] = useState<string[]>([]);
+    const [selectedVideosToDelete, setSelectedVideosToDelete] = useState<string[]>([]);
+    const [selectedPhotosToDelete, setSelectedPhotosToDelete] = useState<string[]>([]);
+
     // Add User Form State
     const [newUserName, setNewUserName] = useState('');
     const [newUserAvatar, setNewUserAvatar] = useState('');
@@ -100,25 +105,53 @@ export default function AdminDashboard() {
     };
 
     /* DELETION LOGIC */
-    const handleDeleteUser = (id: string) => {
-        setUsers(users.filter(u => u.id !== id));
-    };
-
-    const handleDeleteVideo = (id: string) => {
+    const handleBulkDeleteUsers = () => {
+        if (selectedUsersToDelete.length === 0) return;
         const confirmDelete = window.confirm(
-            "Are you sure? Deleting this Journey will also delete all associated Photos. This action cannot be undone."
+            `Are you sure you want to delete ${selectedUsersToDelete.length} selected user(s)? This action cannot be undone.`
         );
-
         if (confirmDelete) {
-            // Remove video
-            setVideos(videos.filter(v => v.id !== id));
-            // Cascade delete photos
-            setPhotos(photos.filter(p => p.videoId !== id));
+            setUsers(users.filter(u => !selectedUsersToDelete.includes(u.id)));
+            setSelectedUsersToDelete([]);
         }
     };
 
-    const handleDeletePhoto = (id: string) => {
-        setPhotos(photos.filter(p => p.id !== id));
+    const handleBulkDeleteVideos = () => {
+        if (selectedVideosToDelete.length === 0) return;
+        const confirmDelete = window.confirm(
+            `Are you sure you want to delete ${selectedVideosToDelete.length} selected Journey(s)? This will also delete all associated Photos. This action cannot be undone.`
+        );
+
+        if (confirmDelete) {
+            // Remove videos
+            setVideos(videos.filter(v => !selectedVideosToDelete.includes(v.id)));
+            // Cascade delete photos
+            setPhotos(photos.filter(p => !selectedVideosToDelete.includes(p.videoId)));
+            setSelectedVideosToDelete([]);
+        }
+    };
+
+    const handleBulkDeletePhotos = () => {
+        if (selectedPhotosToDelete.length === 0) return;
+        const confirmDelete = window.confirm(
+            `Are you sure you want to delete ${selectedPhotosToDelete.length} selected photo(s)? This action cannot be undone.`
+        );
+        if (confirmDelete) {
+            setPhotos(photos.filter(p => !selectedPhotosToDelete.includes(p.id)));
+            setSelectedPhotosToDelete([]);
+        }
+    };
+
+    const toggleDeleteSelection = (
+        id: string,
+        selectedList: string[],
+        setSelectedList: React.Dispatch<React.SetStateAction<string[]>>
+    ) => {
+        if (selectedList.includes(id)) {
+            setSelectedList(selectedList.filter(itemId => itemId !== id));
+        } else {
+            setSelectedList([...selectedList, id]);
+        }
     };
 
     const toggleUserSelection = (id: string) => {
@@ -131,7 +164,7 @@ export default function AdminDashboard() {
 
     /* RENDERING VIEWS */
     const renderPeopleManagement = () => (
-        <div className="dashboard-grid">
+        <div className="dashboard-grid flex flex-col lg:grid lg:grid-cols-2 gap-8">
             <div className="glass-panel dashboard-panel">
                 <h2 className="panel-title mx-auto"><UserPlus size={20} className="icon-accent" /> Add New Person</h2>
                 <form onSubmit={handleAddUser} className="dashboard-form">
@@ -155,17 +188,27 @@ export default function AdminDashboard() {
             </div>
 
             <div className="glass-panel dashboard-panel">
-                <h2 className="panel-title"><Users size={20} className="icon-accent" /> Managed People</h2>
+                <div className="flex justify-between items-center mb-4">
+                    <h2 className="panel-title mb-0"><Users size={20} className="icon-accent" /> Managed People</h2>
+                    {selectedUsersToDelete.length > 0 && (
+                        <button onClick={handleBulkDeleteUsers} className="px-4 py-2 bg-red-500/10 text-red-500 hover:bg-red-500/20 hover:text-red-400 border border-red-500/30 hover:border-red-500/50 rounded-lg text-sm transition-all duration-300 flex items-center gap-2 font-medium">
+                            <Trash2 size={16} /> Delete Selected ({selectedUsersToDelete.length})
+                        </button>
+                    )}
+                </div>
                 <div className="user-list">
                     {users.map(user => (
-                        <div key={user.id} className="user-card">
+                        <div key={user.id} className="user-card flex items-center gap-3">
+                            <input
+                                type="checkbox"
+                                className="w-4 h-4 rounded border-gray-300 text-red-500 focus:ring-red-500"
+                                checked={selectedUsersToDelete.includes(user.id)}
+                                onChange={() => toggleDeleteSelection(user.id, selectedUsersToDelete, setSelectedUsersToDelete)}
+                            />
                             <div className="avatar-img-wrapper" style={{ flexShrink: 0 }}>
                                 <Image src={user.avatarUrl} alt={user.name} width={32} height={32} className="avatar-img" />
                             </div>
                             <span className="flex-1 font-medium">{user.name}</span>
-                            <button onClick={() => handleDeleteUser(user.id)} className="entry-delete" aria-label="Delete user">
-                                <Trash2 size={16} />
-                            </button>
                         </div>
                     ))}
                 </div>
@@ -174,7 +217,7 @@ export default function AdminDashboard() {
     );
 
     const renderJourneyManagement = () => (
-        <div className="dashboard-grid">
+        <div className="dashboard-grid flex flex-col lg:grid lg:grid-cols-2 gap-8">
             <div className="glass-panel dashboard-panel">
                 <h2 className="panel-title"><Youtube size={20} className="icon-accent" /> Add Journey (Video)</h2>
                 <form onSubmit={handleAddVideo} className="dashboard-form">
@@ -234,26 +277,32 @@ export default function AdminDashboard() {
             </div>
 
             <div className="glass-panel dashboard-panel">
-                <h2 className="panel-title"><FileVideo size={20} className="icon-accent" /> Managed Journeys</h2>
+                <div className="flex justify-between items-center mb-4">
+                    <h2 className="panel-title mb-0"><FileVideo size={20} className="icon-accent" /> Managed Journeys</h2>
+                    {selectedVideosToDelete.length > 0 && (
+                        <button onClick={handleBulkDeleteVideos} className="px-4 py-2 bg-red-500/10 text-red-500 hover:bg-red-500/20 hover:text-red-400 border border-red-500/30 hover:border-red-500/50 rounded-lg text-sm transition-all duration-300 flex items-center gap-2 font-medium">
+                            <Trash2 size={16} /> Delete Selected ({selectedVideosToDelete.length})
+                        </button>
+                    )}
+                </div>
                 {videos.length === 0 ? (
                     <p className="empty-state">No journeys added yet.</p>
                 ) : (
                     <div className="entries-list" style={{ maxHeight: '500px', overflowY: 'auto', paddingRight: '0.5rem' }}>
                         {videos.map(video => (
-                            <div key={video.id} className="entry-card">
-                                <div className="entry-info">
+                            <div key={video.id} className="entry-card flex items-center gap-3">
+                                <input
+                                    type="checkbox"
+                                    className="w-4 h-4 rounded border-gray-300 text-red-500 focus:ring-red-500"
+                                    checked={selectedVideosToDelete.includes(video.id)}
+                                    onChange={() => toggleDeleteSelection(video.id, selectedVideosToDelete, setSelectedVideosToDelete)}
+                                />
+                                <div className="entry-info flex-1">
                                     <span className="entry-title">
                                         <Youtube size={14} className="icon-video" /> {video.title}
                                     </span>
                                     <span className="entry-date">{video.location} • {video.date}</span>
                                 </div>
-                                <button
-                                    onClick={() => handleDeleteVideo(video.id)}
-                                    className="entry-delete"
-                                    title="Delete Journey and its Photos"
-                                >
-                                    <Trash2 size={16} />
-                                </button>
                             </div>
                         ))}
                     </div>
@@ -263,7 +312,7 @@ export default function AdminDashboard() {
     );
 
     const renderPhotoManagement = () => (
-        <div className="dashboard-grid">
+        <div className="dashboard-grid flex flex-col lg:grid lg:grid-cols-2 gap-8">
             <div className="glass-panel dashboard-panel">
                 <h2 className="panel-title"><ImageIcon size={20} className="icon-accent" /> Add Photos to Journey</h2>
                 <form onSubmit={handleAddPhotos} className="dashboard-form">
@@ -292,7 +341,14 @@ export default function AdminDashboard() {
             </div>
 
             <div className="glass-panel dashboard-panel">
-                <h2 className="panel-title"><ImageIcon size={20} className="icon-accent" /> Managed Photos</h2>
+                <div className="flex justify-between items-center mb-4">
+                    <h2 className="panel-title mb-0"><ImageIcon size={20} className="icon-accent" /> Managed Photos</h2>
+                    {selectedPhotosToDelete.length > 0 && (
+                        <button onClick={handleBulkDeletePhotos} className="px-4 py-2 bg-red-500/10 text-red-500 hover:bg-red-500/20 hover:text-red-400 border border-red-500/30 hover:border-red-500/50 rounded-lg text-sm transition-all duration-300 flex items-center gap-2 font-medium">
+                            <Trash2 size={16} /> Delete Selected ({selectedPhotosToDelete.length})
+                        </button>
+                    )}
+                </div>
                 {photos.length === 0 ? (
                     <p className="empty-state">No photos added yet.</p>
                 ) : (
@@ -300,8 +356,14 @@ export default function AdminDashboard() {
                         {photos.map(photo => {
                             const parentVideo = videos.find(v => v.id === photo.videoId);
                             return (
-                                <div key={photo.id} className="entry-card">
-                                    <div className="entry-info" style={{ flexDirection: 'row', alignItems: 'center', gap: '1rem' }}>
+                                <div key={photo.id} className="entry-card flex items-center gap-3">
+                                    <input
+                                        type="checkbox"
+                                        className="w-4 h-4 rounded border-gray-300 text-red-500 focus:ring-red-500"
+                                        checked={selectedPhotosToDelete.includes(photo.id)}
+                                        onChange={() => toggleDeleteSelection(photo.id, selectedPhotosToDelete, setSelectedPhotosToDelete)}
+                                    />
+                                    <div className="entry-info flex-1" style={{ flexDirection: 'row', alignItems: 'center', gap: '1rem' }}>
                                         <div style={{ width: '48px', height: '48px', position: 'relative', borderRadius: '0.5rem', overflow: 'hidden', border: '1px solid var(--glass-border)' }}>
                                             <Image src={photo.url} alt="Thumbnail" fill style={{ objectFit: 'cover' }} />
                                         </div>
@@ -309,9 +371,6 @@ export default function AdminDashboard() {
                                             <span className="entry-title text-sm">{parentVideo?.title || 'Unknown Parent Journey'}</span>
                                         </div>
                                     </div>
-                                    <button onClick={() => handleDeletePhoto(photo.id)} className="entry-delete">
-                                        <Trash2 size={16} />
-                                    </button>
                                 </div>
                             );
                         })}

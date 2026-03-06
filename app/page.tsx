@@ -1,24 +1,58 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Volume2, VolumeX } from 'lucide-react';
 import VideoFeed from './components/VideoFeed';
 import BottomNav from './components/BottomNav';
 import PhotoGrid from './components/PhotoGrid';
-import { initialVideos, initialUsers, initialPhotos } from './lib/mockData';
+import { Video, User, Photo } from './lib/mockData';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState('Videos');
   const [isMuted, setIsMuted] = useState(true);
   const [showDetails, setShowDetails] = useState(true);
 
+  // Data States
+  const [videos, setVideos] = useState<Video[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [photos, setPhotos] = useState<Photo[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
   // Track currently viewed video
   const [activeVideoIndex, setActiveVideoIndex] = useState(0);
 
+  useEffect(() => {
+    const fetchPublicData = async () => {
+      try {
+        const [uRes, vRes, pRes] = await Promise.all([
+          fetch('/api/users'),
+          fetch('/api/videos'),
+          fetch('/api/photos')
+        ]);
+        if (uRes.ok) setUsers(await uRes.json());
+        if (vRes.ok) setVideos(await vRes.json());
+        if (pRes.ok) setPhotos(await pRes.json());
+      } catch (err) {
+        console.error("Failed to fetch public data", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchPublicData();
+  }, []);
+
   // Derived state for the Photos tab (offset by 1 due to landing image at index 0)
-  const activeVideo = activeVideoIndex > 0 ? initialVideos[activeVideoIndex - 1] : undefined;
-  const videoUsers = activeVideo ? activeVideo.userIds.map(id => initialUsers.find(u => u.id === id)).filter(Boolean) as typeof initialUsers : [];
-  const videoPhotos = activeVideo ? initialPhotos.filter(p => p.videoId === activeVideo.id) : [];
+  const activeVideo = activeVideoIndex > 0 ? videos[activeVideoIndex - 1] : undefined;
+  const videoUsers = activeVideo ? activeVideo.userIds.map(id => users.find(u => u.id === id)).filter(Boolean) as User[] : [];
+  const videoPhotos = activeVideo ? photos.filter(p => p.videoId === activeVideo.id) : [];
+
+  if (isLoading) {
+    return (
+      <div style={{ height: '100vh', width: '100%', backgroundColor: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <p style={{ color: '#00f3ff', opacity: 0.8, letterSpacing: '0.1em' }} className="animate-pulse-pin">Loading Journeys...</p>
+      </div>
+    );
+  }
 
   return (
     <main className="app-main">
@@ -41,8 +75,8 @@ export default function Home() {
         <VideoFeed
           isMuted={isMuted}
           showDetails={showDetails}
-          videos={initialVideos}
-          users={initialUsers}
+          videos={videos}
+          users={users}
           activeVideoIndex={activeVideoIndex}
           setActiveVideoIndex={setActiveVideoIndex}
         />

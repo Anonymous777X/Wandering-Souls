@@ -41,7 +41,24 @@ export default function AdminDashboard() {
         const isLoggedIn = localStorage.getItem('isAdminLoggedIn');
         if (!isLoggedIn) {
             router.push('/admin');
+            return;
         }
+
+        const fetchData = async () => {
+            try {
+                const [uRes, vRes, pRes] = await Promise.all([
+                    fetch('/api/users'),
+                    fetch('/api/videos'),
+                    fetch('/api/photos')
+                ]);
+                if (uRes.ok) setUsers(await uRes.json());
+                if (vRes.ok) setVideos(await vRes.json());
+                if (pRes.ok) setPhotos(await pRes.json());
+            } catch (err) {
+                console.error("Failed to fetch admin data", err);
+            }
+        };
+        fetchData();
     }, [router]);
 
     const handleLogout = () => {
@@ -50,40 +67,57 @@ export default function AdminDashboard() {
     };
 
     /* HANDLERS */
-    const handleAddUser = (e: React.FormEvent) => {
+    const handleAddUser = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newUserName.trim()) return;
 
-        const newUser: User = {
-            id: `u${Date.now()}`,
-            name: newUserName,
-            avatarUrl: newUserAvatar || 'https://via.placeholder.com/150'
-        };
-        setUsers([...users, newUser]);
-        setNewUserName('');
-        setNewUserAvatar('');
+        try {
+            const res = await fetch('/api/users', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: newUserName, avatarUrl: newUserAvatar })
+            });
+            if (res.ok) {
+                const savedUser = await res.json();
+                setUsers([savedUser, ...users]); // Add to top
+                setNewUserName('');
+                setNewUserAvatar('');
+            }
+        } catch (error) {
+            alert('Failed to save user');
+        }
     };
 
-    const handleAddVideo = (e: React.FormEvent) => {
+    const handleAddVideo = async (e: React.FormEvent) => {
         e.preventDefault();
         if (selectedUserIds.length === 0) {
             alert("Please select at least one person.");
             return;
         }
 
-        const newVideo: Video = {
-            id: `v${Date.now()}`,
-            title: videoTitle,
-            youtubeId: videoUrl.split('youtu.be/')[1] || videoUrl.split('v=')[1] || videoUrl,
-            userIds: selectedUserIds,
-            location: videoLocation,
-            date: videoDate
-        };
-        setVideos([newVideo, ...videos]);
-        setVideoTitle(''); setVideoUrl(''); setVideoLocation(''); setVideoDate(''); setSelectedUserIds([]);
+        try {
+            const res = await fetch('/api/videos', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title: videoTitle,
+                    youtubeId: videoUrl,
+                    userIds: selectedUserIds,
+                    location: videoLocation,
+                    date: videoDate
+                })
+            });
+            if (res.ok) {
+                const savedVideo = await res.json();
+                setVideos([savedVideo, ...videos]);
+                setVideoTitle(''); setVideoUrl(''); setVideoLocation(''); setVideoDate(''); setSelectedUserIds([]);
+            }
+        } catch (error) {
+            alert('Failed to save journey');
+        }
     };
 
-    const handleAddPhotos = (e: React.FormEvent) => {
+    const handleAddPhotos = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!selectedVideoId) {
             alert("Please select a parent journey (video).");
@@ -93,52 +127,75 @@ export default function AdminDashboard() {
         const urls = photoUrlsInput.split(',').map(u => u.trim()).filter(Boolean);
         if (urls.length === 0) return;
 
-        const newPhotos = urls.map((url, idx) => ({
-            id: `p${Date.now()}_${idx}`,
+        const newPhotos = urls.map(url => ({
             videoId: selectedVideoId,
             url
         }));
 
-        setPhotos([...newPhotos, ...photos]);
-        setPhotoUrlsInput('');
-        setSelectedVideoId('');
+        try {
+            const res = await fetch('/api/photos', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ photos: newPhotos })
+            });
+            if (res.ok) {
+                const savedPhotos = await res.json();
+                setPhotos([...savedPhotos, ...photos]);
+                setPhotoUrlsInput('');
+                setSelectedVideoId('');
+            }
+        } catch (error) {
+            alert('Failed to save photos');
+        }
     };
 
     /* DELETION LOGIC */
-    const handleBulkDeleteUsers = () => {
+    const handleBulkDeleteUsers = async () => {
         if (selectedUsersToDelete.length === 0) return;
-        const confirmDelete = window.confirm(
-            `Are you sure you want to delete ${selectedUsersToDelete.length} selected user(s)? This action cannot be undone.`
-        );
+        const confirmDelete = window.confirm(`Are you sure you want to delete ${selectedUsersToDelete.length} selected user(s)?`);
         if (confirmDelete) {
-            setUsers(users.filter(u => !selectedUsersToDelete.includes(u.id)));
-            setSelectedUsersToDelete([]);
+            const res = await fetch('/api/users', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids: selectedUsersToDelete })
+            });
+            if (res.ok) {
+                setUsers(users.filter(u => !selectedUsersToDelete.includes(u.id)));
+                setSelectedUsersToDelete([]);
+            }
         }
     };
 
-    const handleBulkDeleteVideos = () => {
+    const handleBulkDeleteVideos = async () => {
         if (selectedVideosToDelete.length === 0) return;
-        const confirmDelete = window.confirm(
-            `Are you sure you want to delete ${selectedVideosToDelete.length} selected Journey(s)? This will also delete all associated Photos. This action cannot be undone.`
-        );
-
+        const confirmDelete = window.confirm(`Are you sure you want to delete ${selectedVideosToDelete.length} selected Journey(s)? This will also delete all associated Photos.`);
         if (confirmDelete) {
-            // Remove videos
-            setVideos(videos.filter(v => !selectedVideosToDelete.includes(v.id)));
-            // Cascade delete photos
-            setPhotos(photos.filter(p => !selectedVideosToDelete.includes(p.videoId)));
-            setSelectedVideosToDelete([]);
+            const res = await fetch('/api/videos', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids: selectedVideosToDelete })
+            });
+            if (res.ok) {
+                setVideos(videos.filter(v => !selectedVideosToDelete.includes(v.id)));
+                setPhotos(photos.filter(p => !selectedVideosToDelete.includes(p.videoId)));
+                setSelectedVideosToDelete([]);
+            }
         }
     };
 
-    const handleBulkDeletePhotos = () => {
+    const handleBulkDeletePhotos = async () => {
         if (selectedPhotosToDelete.length === 0) return;
-        const confirmDelete = window.confirm(
-            `Are you sure you want to delete ${selectedPhotosToDelete.length} selected photo(s)? This action cannot be undone.`
-        );
+        const confirmDelete = window.confirm(`Are you sure you want to delete ${selectedPhotosToDelete.length} selected photo(s)?`);
         if (confirmDelete) {
-            setPhotos(photos.filter(p => !selectedPhotosToDelete.includes(p.id)));
-            setSelectedPhotosToDelete([]);
+            const res = await fetch('/api/photos', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids: selectedPhotosToDelete })
+            });
+            if (res.ok) {
+                setPhotos(photos.filter(p => !selectedPhotosToDelete.includes(p.id)));
+                setSelectedPhotosToDelete([]);
+            }
         }
     };
 

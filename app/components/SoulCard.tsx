@@ -37,6 +37,7 @@ export default function SoulCard({ title, users, location, date, showDetails }: 
                                                     width={32}
                                                     height={32}
                                                     className="avatar-img"
+                                                    unoptimized={true}
                                                 />
                                             </div>
                                         ))

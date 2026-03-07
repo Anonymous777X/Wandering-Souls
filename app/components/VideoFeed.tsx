@@ -49,11 +49,14 @@ export default function VideoFeed({ isMuted, showDetails, videos, users, activeV
             {/* Landing Hero Image (Index 0) */}
             <div className="video-container" style={{ backgroundColor: '#000' }}>
                 <div className="video-bg-wrapper">
-                    <img
-                        src="https://i.ibb.co/jP8zs7LN/Gemini-Generated-Image-qchnvaqchnvaqchn-1.jpg"
-                        alt="SoulJourney Home"
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                    />
+                    <picture>
+                        <source media="(max-width: 768px)" srcSet="https://i.ibb.co/4wtxYkBh/Gemini-Generated-Image-ggn6viggn6viggn6.png" />
+                        <img
+                            src="https://i.ibb.co/MytQ57kZ/Gemini-Generated-Image-qchnvaqchnvaqchn.png"
+                            alt="SoulJourney Home"
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                    </picture>
                     <div className="video-gradient-overlay" />
                 </div>
 

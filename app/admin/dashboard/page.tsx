@@ -263,7 +263,7 @@ export default function AdminDashboard() {
                                 onChange={() => toggleDeleteSelection(user.id, selectedUsersToDelete, setSelectedUsersToDelete)}
                             />
                             <div className="avatar-img-wrapper" style={{ flexShrink: 0 }}>
-                                <Image src={user.avatarUrl} alt={user.name} width={32} height={32} className="avatar-img" />
+                                <Image src={user.avatarUrl} alt={user.name} width={32} height={32} className="avatar-img" unoptimized={true} />
                             </div>
                             <span className="flex-1 font-medium">{user.name}</span>
                         </div>

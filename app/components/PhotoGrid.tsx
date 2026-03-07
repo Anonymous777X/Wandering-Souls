@@ -53,6 +53,7 @@ export default function PhotoGrid({ video, users, photos }: PhotoGridProps) {
                                         alt={user.name}
                                         fill
                                         className="avatar-img"
+                                        unoptimized={true}
                                     />
                                 </div>
                                 <span className="participant-name">{user.name}</span>
@@ -77,6 +78,7 @@ export default function PhotoGrid({ video, users, photos }: PhotoGridProps) {
                                     fill
                                     className="gallery-img"
                                     sizes="(max-width: 768px) 50vw, 33vw"
+                                    unoptimized={true}
                                 />
                             </motion.div>
                         ))

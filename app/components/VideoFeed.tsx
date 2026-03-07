@@ -49,10 +49,10 @@ export default function VideoFeed({ isMuted, showDetails, videos, users, activeV
             {/* Landing Hero Image (Index 0) */}
             <div className="video-container" style={{ backgroundColor: '#000' }}>
                 <div className="video-bg-wrapper">
-                    <picture>
-                        <source media="(max-width: 768px)" srcSet="https://i.ibb.co/4wtxYkBh/Gemini-Generated-Image-ggn6viggn6viggn6.png" />
+                    <picture style={{ width: '100%', height: '100%', display: 'block' }}>
+                        <source media="(max-width: 768px)" srcSet="https://res.cloudinary.com/davovg4nm/image/upload/q_100,f_auto/v1772886534/Gemini_Generated_Image_ggn6viggn6viggn6_bzihxr.png" />
                         <img
-                            src="https://i.ibb.co/MytQ57kZ/Gemini-Generated-Image-qchnvaqchnvaqchn.png"
+                            src="https://res.cloudinary.com/davovg4nm/image/upload/q_100,f_auto/v1772886522/Gemini_Generated_Image_qchnvaqchnvaqchn_1_kxmha9.jpg"
                             alt="SoulJourney Home"
                             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                         />

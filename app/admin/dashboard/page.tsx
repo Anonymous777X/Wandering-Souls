@@ -149,54 +149,83 @@ export default function AdminDashboard() {
         }
     };
 
+    // Custom Modal State
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [modalConfig, setModalConfig] = useState<{
+        title: string;
+        message: string;
+        onConfirm: () => void;
+    } | null>(null);
+
+    const confirmDeletion = (title: string, message: string, onConfirmAction: () => Promise<void>) => {
+        setModalConfig({
+            title,
+            message,
+            onConfirm: async () => {
+                await onConfirmAction();
+                setIsModalOpen(false);
+            }
+        });
+        setIsModalOpen(true);
+    };
+
     /* DELETION LOGIC */
-    const handleBulkDeleteUsers = async () => {
+    const handleBulkDeleteUsers = () => {
         if (selectedUsersToDelete.length === 0) return;
-        const confirmDelete = window.confirm(`Are you sure you want to delete ${selectedUsersToDelete.length} selected user(s)?`);
-        if (confirmDelete) {
-            const res = await fetch('/api/users', {
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ids: selectedUsersToDelete })
-            });
-            if (res.ok) {
-                setUsers(users.filter(u => !selectedUsersToDelete.includes(u.id)));
-                setSelectedUsersToDelete([]);
+        confirmDeletion(
+            "Delete People",
+            `Are you sure you want to delete ${selectedUsersToDelete.length} selected person(s)? This action cannot be undone.`,
+            async () => {
+                const res = await fetch('/api/users', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ids: selectedUsersToDelete })
+                });
+                if (res.ok) {
+                    setUsers(users.filter(u => !selectedUsersToDelete.includes(u.id)));
+                    setSelectedUsersToDelete([]);
+                }
             }
-        }
+        );
     };
 
-    const handleBulkDeleteVideos = async () => {
+    const handleBulkDeleteVideos = () => {
         if (selectedVideosToDelete.length === 0) return;
-        const confirmDelete = window.confirm(`Are you sure you want to delete ${selectedVideosToDelete.length} selected Journey(s)? This will also delete all associated Photos.`);
-        if (confirmDelete) {
-            const res = await fetch('/api/videos', {
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ids: selectedVideosToDelete })
-            });
-            if (res.ok) {
-                setVideos(videos.filter(v => !selectedVideosToDelete.includes(v.id)));
-                setPhotos(photos.filter(p => !selectedVideosToDelete.includes(p.videoId)));
-                setSelectedVideosToDelete([]);
+        confirmDeletion(
+            "Delete Journeys",
+            `Are you sure you want to delete ${selectedVideosToDelete.length} selected Journey(s)? This will also permanently delete all associated Photos.`,
+            async () => {
+                const res = await fetch('/api/videos', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ids: selectedVideosToDelete })
+                });
+                if (res.ok) {
+                    setVideos(videos.filter(v => !selectedVideosToDelete.includes(v.id)));
+                    setPhotos(photos.filter(p => !selectedVideosToDelete.includes(p.videoId)));
+                    setSelectedVideosToDelete([]);
+                }
             }
-        }
+        );
     };
 
-    const handleBulkDeletePhotos = async () => {
+    const handleBulkDeletePhotos = () => {
         if (selectedPhotosToDelete.length === 0) return;
-        const confirmDelete = window.confirm(`Are you sure you want to delete ${selectedPhotosToDelete.length} selected photo(s)?`);
-        if (confirmDelete) {
-            const res = await fetch('/api/photos', {
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ids: selectedPhotosToDelete })
-            });
-            if (res.ok) {
-                setPhotos(photos.filter(p => !selectedPhotosToDelete.includes(p.id)));
-                setSelectedPhotosToDelete([]);
+        confirmDeletion(
+            "Delete Photos",
+            `Are you sure you want to delete ${selectedPhotosToDelete.length} selected photo(s)? This action cannot be undone.`,
+            async () => {
+                const res = await fetch('/api/photos', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ids: selectedPhotosToDelete })
+                });
+                if (res.ok) {
+                    setPhotos(photos.filter(p => !selectedPhotosToDelete.includes(p.id)));
+                    setSelectedPhotosToDelete([]);
+                }
             }
-        }
+        );
     };
 
     const toggleDeleteSelection = (
@@ -221,7 +250,7 @@ export default function AdminDashboard() {
 
     /* RENDERING VIEWS */
     const renderPeopleManagement = () => (
-        <div className="dashboard-grid flex flex-col lg:grid lg:grid-cols-2 gap-8">
+        <div className="dashboard-grid" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem' }}>
             <div className="glass-panel dashboard-panel">
                 <h2 className="panel-title mx-auto"><UserPlus size={20} className="icon-accent" /> Add New Person</h2>
                 <form onSubmit={handleAddUser} className="dashboard-form">
@@ -245,11 +274,11 @@ export default function AdminDashboard() {
             </div>
 
             <div className="glass-panel dashboard-panel">
-                <div className="flex justify-between items-center mb-4">
-                    <h2 className="panel-title mb-0"><Users size={20} className="icon-accent" /> Managed People</h2>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                    <h2 className="panel-title" style={{ marginBottom: 0 }}><Users size={20} className="icon-accent" /> Managed People</h2>
                     {selectedUsersToDelete.length > 0 && (
-                        <button onClick={handleBulkDeleteUsers} className="px-4 py-2 bg-red-500/10 text-red-500 hover:bg-red-500/20 hover:text-red-400 border border-red-500/30 hover:border-red-500/50 rounded-lg text-sm transition-all duration-300 flex items-center gap-2 font-medium">
-                            <Trash2 size={16} /> Delete Selected ({selectedUsersToDelete.length})
+                        <button onClick={handleBulkDeleteUsers} style={{ backgroundColor: 'rgba(239, 68, 68, 0.15)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '0.375rem 0.75rem', borderRadius: '0.375rem', display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer', transition: 'all 0.2s' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#ef4444'; e.currentTarget.style.color = '#fff' }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.15)'; e.currentTarget.style.color = '#f87171' }}>
+                            <Trash2 size={16} /> Delete ({selectedUsersToDelete.length})
                         </button>
                     )}
                 </div>
@@ -274,7 +303,7 @@ export default function AdminDashboard() {
     );
 
     const renderJourneyManagement = () => (
-        <div className="dashboard-grid flex flex-col lg:grid lg:grid-cols-2 gap-8">
+        <div className="dashboard-grid" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem' }}>
             <div className="glass-panel dashboard-panel">
                 <h2 className="panel-title"><Youtube size={20} className="icon-accent" /> Add Journey (Video)</h2>
                 <form onSubmit={handleAddVideo} className="dashboard-form">
@@ -334,11 +363,11 @@ export default function AdminDashboard() {
             </div>
 
             <div className="glass-panel dashboard-panel">
-                <div className="flex justify-between items-center mb-4">
-                    <h2 className="panel-title mb-0"><FileVideo size={20} className="icon-accent" /> Managed Journeys</h2>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                    <h2 className="panel-title" style={{ marginBottom: 0 }}><FileVideo size={20} className="icon-accent" /> Managed Journeys</h2>
                     {selectedVideosToDelete.length > 0 && (
-                        <button onClick={handleBulkDeleteVideos} className="px-4 py-2 bg-red-500/10 text-red-500 hover:bg-red-500/20 hover:text-red-400 border border-red-500/30 hover:border-red-500/50 rounded-lg text-sm transition-all duration-300 flex items-center gap-2 font-medium">
-                            <Trash2 size={16} /> Delete Selected ({selectedVideosToDelete.length})
+                        <button onClick={handleBulkDeleteVideos} style={{ backgroundColor: 'rgba(239, 68, 68, 0.15)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '0.375rem 0.75rem', borderRadius: '0.375rem', display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer', transition: 'all 0.2s' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#ef4444'; e.currentTarget.style.color = '#fff' }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.15)'; e.currentTarget.style.color = '#f87171' }}>
+                            <Trash2 size={16} /> Delete ({selectedVideosToDelete.length})
                         </button>
                     )}
                 </div>
@@ -369,7 +398,7 @@ export default function AdminDashboard() {
     );
 
     const renderPhotoManagement = () => (
-        <div className="dashboard-grid flex flex-col lg:grid lg:grid-cols-2 gap-8">
+        <div className="dashboard-grid" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem' }}>
             <div className="glass-panel dashboard-panel">
                 <h2 className="panel-title"><ImageIcon size={20} className="icon-accent" /> Add Photos to Journey</h2>
                 <form onSubmit={handleAddPhotos} className="dashboard-form">
@@ -398,11 +427,11 @@ export default function AdminDashboard() {
             </div>
 
             <div className="glass-panel dashboard-panel">
-                <div className="flex justify-between items-center mb-4">
-                    <h2 className="panel-title mb-0"><ImageIcon size={20} className="icon-accent" /> Managed Photos</h2>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                    <h2 className="panel-title" style={{ marginBottom: 0 }}><ImageIcon size={20} className="icon-accent" /> Managed Photos</h2>
                     {selectedPhotosToDelete.length > 0 && (
-                        <button onClick={handleBulkDeletePhotos} className="px-4 py-2 bg-red-500/10 text-red-500 hover:bg-red-500/20 hover:text-red-400 border border-red-500/30 hover:border-red-500/50 rounded-lg text-sm transition-all duration-300 flex items-center gap-2 font-medium">
-                            <Trash2 size={16} /> Delete Selected ({selectedPhotosToDelete.length})
+                        <button onClick={handleBulkDeletePhotos} style={{ backgroundColor: 'rgba(239, 68, 68, 0.15)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '0.375rem 0.75rem', borderRadius: '0.375rem', display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer', transition: 'all 0.2s' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#ef4444'; e.currentTarget.style.color = '#fff' }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.15)'; e.currentTarget.style.color = '#f87171' }}>
+                            <Trash2 size={16} /> Delete ({selectedPhotosToDelete.length})
                         </button>
                     )}
                 </div>
@@ -477,13 +506,13 @@ export default function AdminDashboard() {
             {/* MAIN CONTENT AREA */}
             <main className="admin-content">
                 <div className="max-w-5xl mx-auto">
-                    <div className="mb-8">
-                        <h1 className="text-3xl font-semibold mb-2 text-[var(--text-primary)]">
+                    <div style={{ marginBottom: '2.5rem' }}>
+                        <h1 style={{ fontSize: '1.875rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
                             {adminTab === 'people' && 'People Management'}
                             {adminTab === 'journey' && 'Journey & Video Operations'}
                             {adminTab === 'photos' && 'Photo Archive Control'}
                         </h1>
-                        <p className="text-[var(--text-secondary)]">
+                        <p style={{ color: 'var(--text-secondary)' }}>
                             {adminTab === 'people' && 'Add tracking profiles for individuals appearing in your journeys.'}
                             {adminTab === 'journey' && 'Create a new journey block, assign people to it, and watch the timeline map update.'}
                             {adminTab === 'photos' && 'Bulk upload external photos and meticulously assign them to your active journeys.'}
@@ -494,6 +523,63 @@ export default function AdminDashboard() {
                     {adminTab === 'people' && renderPeopleManagement()}
                     {adminTab === 'journey' && renderJourneyManagement()}
                     {adminTab === 'photos' && renderPhotoManagement()}
+
+                    {/* Custom Confirmation Modal */}
+                    {isModalOpen && modalConfig && (
+                        <div style={{
+                            position: 'fixed',
+                            top: 0,
+                            left: 0,
+                            width: '100vw',
+                            height: '100vh',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                            backdropFilter: 'blur(8px)',
+                            WebkitBackdropFilter: 'blur(8px)',
+                            zIndex: 9999,
+                            padding: '1rem'
+                        }}>
+                            <div style={{
+                                backgroundColor: '#0f172a',
+                                border: '1px solid rgba(255, 255, 255, 0.1)',
+                                borderRadius: '1rem',
+                                padding: '1.5rem',
+                                width: '100%',
+                                maxWidth: '28rem',
+                                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8)',
+                                position: 'relative',
+                                overflow: 'hidden'
+                            }}>
+                                <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '4px', backgroundColor: '#ef4444' }}></div>
+                                <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#f87171', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <Trash2 size={20} /> {modalConfig.title}
+                                </h3>
+                                <p style={{ color: '#94a3b8', marginBottom: '1.5rem', fontSize: '0.875rem', lineHeight: 1.5 }}>
+                                    {modalConfig.message}
+                                </p>
+                                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem', fontSize: '0.875rem', fontWeight: 500 }}>
+                                    <button
+                                        onClick={() => setIsModalOpen(false)}
+                                        style={{ padding: '0.5rem 1rem', borderRadius: '0.5rem', backgroundColor: 'transparent', color: '#94a3b8', border: 'none', cursor: 'pointer', transition: 'color 0.2s, background-color 0.2s' }}
+                                        onMouseEnter={(e) => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)' }}
+                                        onMouseLeave={(e) => { e.currentTarget.style.color = '#94a3b8'; e.currentTarget.style.backgroundColor = 'transparent' }}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={modalConfig.onConfirm}
+                                        style={{ padding: '0.5rem 1rem', borderRadius: '0.5rem', backgroundColor: 'rgba(239, 68, 68, 0.2)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.3)', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 0 15px rgba(239, 68, 68, 0.2)' }}
+                                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#ef4444'; e.currentTarget.style.color = '#fff' }}
+                                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.2)'; e.currentTarget.style.color = '#ef4444' }}
+                                    >
+                                        Yes, Delete
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </main>
         </div>

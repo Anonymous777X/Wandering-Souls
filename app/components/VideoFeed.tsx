@@ -4,6 +4,8 @@ import { useRef, useEffect } from 'react';
 import SoulCard from './SoulCard';
 import { Video, User } from '../lib/mockData';
 
+import YouTube, { YouTubeEvent, YouTubePlayer } from 'react-youtube';
+
 interface VideoFeedProps {
     isMuted: boolean;
     showDetails: boolean;
@@ -11,12 +13,66 @@ interface VideoFeedProps {
     users: User[];
     activeVideoIndex: number;
     setActiveVideoIndex: (index: number) => void;
+    activeTab: string; // To pause when navigating away
 }
 
-export default function VideoFeed({ isMuted, showDetails, videos, users, activeVideoIndex, setActiveVideoIndex }: VideoFeedProps) {
+export default function VideoFeed({ isMuted, showDetails, videos, users, activeVideoIndex, setActiveVideoIndex, activeTab }: VideoFeedProps) {
     const containerRef = useRef<HTMLDivElement>(null);
+    const playersRef = useRef<{ [key: string]: YouTubePlayer }>({});
+
+    // Handle play/pause when active video OR active tab changes
+    useEffect(() => {
+        Object.keys(playersRef.current).forEach((videoId) => {
+            const player = playersRef.current[videoId];
+            if (!player) return;
+
+            // The actual active video index in the list
+            const currentVideo = activeVideoIndex > 0 ? videos[activeVideoIndex - 1] : null;
+
+            if (currentVideo && currentVideo.id === videoId && activeTab === 'Videos') {
+                // If it's the active video AND we are on the Videos tab, play it
+                try {
+                    player.playVideo();
+                    if (isMuted) {
+                        player.mute();
+                    } else {
+                        player.unMute();
+                    }
+                } catch (e) {
+                    console.error("Error playing video", e);
+                }
+            } else {
+                // If it's not the active video, OR we navigated away from Videos tab, pause it
+                try {
+                    player.pauseVideo();
+                } catch (e) {
+                    console.error("Error pausing video", e);
+                }
+            }
+        });
+    }, [activeVideoIndex, videos, isMuted, activeTab]);
+
+    const onReady = (event: YouTubeEvent, videoId: string) => {
+        playersRef.current[videoId] = event.target;
+        
+        // Auto-play initially if it is the active one when it loads
+        const currentVideo = activeVideoIndex > 0 ? videos[activeVideoIndex - 1] : null;
+        if (currentVideo && currentVideo.id === videoId) {
+             event.target.playVideo();
+             if (isMuted) {
+                 event.target.mute();
+             } else {
+                 event.target.unMute();
+             }
+        }
+    };
 
     useEffect(() => {
+        // Upon mount, if there's an active video, jump to it immediately
+        if (containerRef.current && activeVideoIndex > 0) {
+            containerRef.current.scrollTop = activeVideoIndex * window.innerHeight;
+        }
+
         const handleScroll = () => {
             if (!containerRef.current) return;
 
@@ -24,7 +80,7 @@ export default function VideoFeed({ isMuted, showDetails, videos, users, activeV
             const windowHeight = window.innerHeight;
 
             const index = Math.round(scrollPosition / windowHeight);
-            if (index !== activeVideoIndex && index >= 0 && index < videos.length) {
+            if (index !== activeVideoIndex && index >= 0 && index <= videos.length) {
                 setActiveVideoIndex(index);
             }
         };
@@ -32,11 +88,14 @@ export default function VideoFeed({ isMuted, showDetails, videos, users, activeV
         const container = containerRef.current;
         if (container) {
             container.addEventListener('scroll', handleScroll);
+            // Re-check scroll position on resize
+            window.addEventListener('resize', handleScroll);
         }
 
         return () => {
             if (container) {
                 container.removeEventListener('scroll', handleScroll);
+                window.removeEventListener('resize', handleScroll);
             }
         };
     }, [activeVideoIndex, videos.length, setActiveVideoIndex]);
@@ -71,8 +130,6 @@ export default function VideoFeed({ isMuted, showDetails, videos, users, activeV
             </div>
 
             {videos.map((video, index) => {
-                const actualIndex = index + 1;
-                const isActive = actualIndex === activeVideoIndex;
                 // Map userIds to actual User objects for this video
                 const videoUsers = video.userIds.map(id => users.find(u => u.id === id)).filter(Boolean) as User[];
 
@@ -86,18 +143,33 @@ export default function VideoFeed({ isMuted, showDetails, videos, users, activeV
                     videoId = videoId.split('/shorts/')[1].split('?')[0];
                 }
 
+                const opts = {
+                    height: '100%',
+                    width: '100%',
+                    playerVars: {
+                        autoplay: 0, // We control it programmatically
+                        controls: 0,
+                        rel: 0,
+                        showinfo: 0,
+                        mute: isMuted ? 1 : 0,
+                        loop: 1,
+                        playlist: videoId,
+                        modestbranding: 1,
+                        playsinline: 1,
+                    },
+                };
+
                 return (
                     <div
                         key={video.id}
                         className="video-container"
                     >
                         <div className="video-bg-wrapper">
-                            <iframe
-                                className="video-iframe"
-                                src={`https://www.youtube.com/embed/${videoId}?autoplay=${isActive ? 1 : 0}&mute=${isMuted ? 1 : 0}&controls=0&showinfo=0&rel=0&loop=1&playlist=${videoId}`}
-                                title="YouTube video player"
-                                frameBorder="0"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            <YouTube 
+                                videoId={videoId} 
+                                opts={opts} 
+                                onReady={(e) => onReady(e, video.id)} 
+                                className="video-iframe" 
                             />
                             <div className="video-gradient-overlay" />
                         </div>

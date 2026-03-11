@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, MapPin, CalendarDays } from 'lucide-react';
 import { User, Photo, Video } from '../lib/mockData';
 
 interface PhotoGridProps {
@@ -47,7 +47,7 @@ export default function PhotoGrid({ video, users, photos }: PhotoGridProps) {
                     <div className="participant-avatars">
                         {users.map(user => (
                             <div key={user.id} className="participant">
-                                <div className="large-avatar-wrapper">
+                                <div className="large-avatar-wrapper" style={{ width: '80px', height: '80px' }}>
                                     <Image
                                         src={user.avatarUrl}
                                         alt={user.name}
@@ -60,10 +60,14 @@ export default function PhotoGrid({ video, users, photos }: PhotoGridProps) {
                             </div>
                         ))}
                     </div>
-                    <p className="photo-location">{video.location} • {video.date}</p>
+                    <div className="photo-location flex items-center justify-center mt-2">
+                        <span className="flex items-center"><MapPin size={16} className="text-[var(--accent-color)] mr-1" /> {video.location}</span>
+                        &nbsp;&nbsp;&nbsp;&nbsp;
+                        <span className="flex items-center ml-6"><CalendarDays size={16} className="text-[var(--accent-color)] mr-1" /> {video.date}</span>
+                    </div>
                 </div>
 
-                <div className="photo-gallery">
+                <div className="photo-gallery" style={{ display: photos.length > 0 ? 'grid' : 'flex', justifyContent: 'center' }}>
                     {photos.length > 0 ? (
                         photos.map((photo, index) => (
                             <motion.div
@@ -83,8 +87,8 @@ export default function PhotoGrid({ video, users, photos }: PhotoGridProps) {
                             </motion.div>
                         ))
                     ) : (
-                        <div className="empty-state w-full text-center col-span-full">
-                            No photos uploaded for this journey yet.
+                        <div className="empty-state text-center mt-12 w-full">
+                            <p className="text-[var(--text-secondary)]">No photos uploaded for this journey yet.</p>
                         </div>
                     )}
                 </div>

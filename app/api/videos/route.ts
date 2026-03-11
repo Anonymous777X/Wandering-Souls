@@ -29,11 +29,14 @@ export async function POST(request: Request) {
         const body = await request.json();
         const { title, youtubeId, userIds, location, date } = body;
 
-        const parsedYoutubeId = youtubeId.includes('youtu.be/')
-            ? youtubeId.split('youtu.be/')[1].split('?')[0]
-            : youtubeId.includes('v=')
-                ? youtubeId.split('v=')[1].split('&')[0]
-                : youtubeId;
+        let parsedYoutubeId = youtubeId;
+        if (youtubeId.includes('youtu.be/')) {
+            parsedYoutubeId = youtubeId.split('youtu.be/')[1].split('?')[0];
+        } else if (youtubeId.includes('v=')) {
+            parsedYoutubeId = youtubeId.split('v=')[1].split('&')[0];
+        } else if (youtubeId.includes('/shorts/')) {
+            parsedYoutubeId = youtubeId.split('/shorts/')[1].split('?')[0];
+        }
 
         const video = await Video.create({
             title,

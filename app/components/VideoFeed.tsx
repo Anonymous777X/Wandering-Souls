@@ -76,6 +76,16 @@ export default function VideoFeed({ isMuted, showDetails, videos, users, activeV
                 // Map userIds to actual User objects for this video
                 const videoUsers = video.userIds.map(id => users.find(u => u.id === id)).filter(Boolean) as User[];
 
+                // Parse videoId just in case the database contains a raw URL
+                let videoId = video.youtubeId;
+                if (videoId.includes('youtu.be/')) {
+                    videoId = videoId.split('youtu.be/')[1].split('?')[0];
+                } else if (videoId.includes('v=')) {
+                    videoId = videoId.split('v=')[1].split('&')[0];
+                } else if (videoId.includes('/shorts/')) {
+                    videoId = videoId.split('/shorts/')[1].split('?')[0];
+                }
+
                 return (
                     <div
                         key={video.id}
@@ -84,7 +94,7 @@ export default function VideoFeed({ isMuted, showDetails, videos, users, activeV
                         <div className="video-bg-wrapper">
                             <iframe
                                 className="video-iframe"
-                                src={`https://www.youtube.com/embed/${video.youtubeId}?autoplay=${isActive ? 1 : 0}&mute=${isMuted ? 1 : 0}&controls=0&showinfo=0&rel=0&loop=1&playlist=${video.youtubeId}`}
+                                src={`https://www.youtube.com/embed/${videoId}?autoplay=${isActive ? 1 : 0}&mute=${isMuted ? 1 : 0}&controls=0&showinfo=0&rel=0&loop=1&playlist=${videoId}`}
                                 title="YouTube video player"
                                 frameBorder="0"
                                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"

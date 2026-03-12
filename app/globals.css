@@ -260,6 +260,10 @@ a {
   filter: brightness(0.8);
 }
 
+.video-gradient-bg {
+  display: none;
+}
+
 .video-gradient-overlay {
   position: absolute;
   inset: 0;
@@ -1014,4 +1018,47 @@ a {
   background-color: var(--card-bg);
   border-radius: 0.75rem;
   border: 1px solid var(--glass-border);
+}
+
+/* ===== Mobile Fixes ===== */
+@media (max-width: 768px) {
+
+  /* Compact bottom nav bar */
+  .bottom-nav {
+    padding: 0.5rem;
+  }
+
+  .nav-bar {
+    padding: 0.5rem 1rem;
+    max-width: 22rem;
+  }
+
+  .nav-item svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .nav-label {
+    font-size: 8px;
+  }
+
+  /* Dynamic gradient background behind contained video on mobile */
+  .video-gradient-bg {
+    display: block;
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  /* Video: contain instead of cover so it's not over-cropped */
+  .video-bg-wrapper {
+    background-color: #000;
+  }
+
+  .video-iframe {
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+  }
 }

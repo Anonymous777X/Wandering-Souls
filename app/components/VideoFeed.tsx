@@ -6,6 +6,18 @@ import { Video, User } from '../lib/mockData';
 
 import YouTube, { YouTubeEvent, YouTubePlayer } from 'react-youtube';
 
+// Dark gradient palette matching the site's moody, techy aesthetic
+const GRADIENT_PALETTE = [
+    'radial-gradient(ellipse at 30% 50%, #0c1a3a 0%, #0a0f1e 50%, #020617 100%)',
+    'radial-gradient(ellipse at 70% 40%, #0b2948 0%, #07101e 50%, #020617 100%)',
+    'radial-gradient(ellipse at 40% 60%, #0d1f3c 0%, #061224 50%, #000a14 100%)',
+    'radial-gradient(ellipse at 60% 30%, #0a2a3e 0%, #051520 50%, #020617 100%)',
+    'radial-gradient(ellipse at 50% 70%, #0e1a40 0%, #080e28 50%, #020617 100%)',
+    'radial-gradient(ellipse at 35% 45%, #0b2535 0%, #06131d 50%, #000a14 100%)',
+    'radial-gradient(ellipse at 65% 55%, #0c1e44 0%, #07112a 50%, #020617 100%)',
+    'radial-gradient(ellipse at 45% 35%, #092838 0%, #05141e 50%, #020617 100%)',
+];
+
 interface VideoFeedProps {
     isMuted: boolean;
     showDetails: boolean;
@@ -54,16 +66,16 @@ export default function VideoFeed({ isMuted, showDetails, videos, users, activeV
 
     const onReady = (event: YouTubeEvent, videoId: string) => {
         playersRef.current[videoId] = event.target;
-        
+
         // Auto-play initially if it is the active one when it loads
         const currentVideo = activeVideoIndex > 0 ? videos[activeVideoIndex - 1] : null;
         if (currentVideo && currentVideo.id === videoId) {
-             event.target.playVideo();
-             if (isMuted) {
-                 event.target.mute();
-             } else {
-                 event.target.unMute();
-             }
+            event.target.playVideo();
+            if (isMuted) {
+                event.target.mute();
+            } else {
+                event.target.unMute();
+            }
         }
     };
 
@@ -159,17 +171,26 @@ export default function VideoFeed({ isMuted, showDetails, videos, users, activeV
                     },
                 };
 
+                // Pick a gradient from the palette based on index
+                const gradient = GRADIENT_PALETTE[index % GRADIENT_PALETTE.length];
+
                 return (
                     <div
                         key={video.id}
                         className="video-container"
                     >
                         <div className="video-bg-wrapper">
-                            <YouTube 
-                                videoId={videoId} 
-                                opts={opts} 
-                                onReady={(e) => onReady(e, video.id)} 
-                                className="video-iframe" 
+                            {/* Dynamic gradient background (visible on mobile behind contained video) */}
+                            <div
+                                className="video-gradient-bg"
+                                style={{ background: gradient }}
+                            />
+                            {/* Main foreground video */}
+                            <YouTube
+                                videoId={videoId}
+                                opts={opts}
+                                onReady={(e) => onReady(e, video.id)}
+                                className="video-iframe"
                             />
                             <div className="video-gradient-overlay" />
                         </div>

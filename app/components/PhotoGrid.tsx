@@ -1,9 +1,12 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import { ChevronLeft, ChevronRight, X, MapPin, CalendarDays } from 'lucide-react';
 import { User, Photo, Video } from '../lib/mockData';
+import { isOptimizableImage } from '../lib/imageHosts';
 
 interface PhotoGridProps {
     video: Video;
@@ -15,7 +18,9 @@ export default function PhotoGrid({ video, users, photos }: PhotoGridProps) {
     const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
     const [mounted, setMounted] = useState(false);
 
+    // The lightbox portals into document.body, which only exists after hydration.
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setMounted(true);
     }, []);
 
@@ -53,7 +58,7 @@ export default function PhotoGrid({ video, users, photos }: PhotoGridProps) {
                                         alt={user.name}
                                         fill
                                         className="avatar-img"
-                                        unoptimized={true}
+                                        unoptimized={!isOptimizableImage(user.avatarUrl)}
                                     />
                                 </div>
                                 <span className="participant-name">{user.name}</span>
@@ -82,7 +87,7 @@ export default function PhotoGrid({ video, users, photos }: PhotoGridProps) {
                                     fill
                                     className="gallery-img"
                                     sizes="(max-width: 768px) 50vw, 33vw"
-                                    unoptimized={true}
+                                    unoptimized={!isOptimizableImage(photo.url)}
                                 />
                             </motion.div>
                         ))

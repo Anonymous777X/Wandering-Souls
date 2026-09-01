@@ -1,21 +1,18 @@
+import path from "path";
 import type { NextConfig } from "next";
+import { OPTIMIZED_IMAGE_HOSTS } from "./app/lib/imageHosts";
 
 const nextConfig: NextConfig = {
+  // Pin the workspace root: a stray lockfile in a parent folder otherwise makes
+  // Next infer the wrong project root.
+  turbopack: {
+    root: path.resolve(__dirname),
+  },
   images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'images.unsplash.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'ui-avatars.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'via.placeholder.com',
-      }
-    ],
+    remotePatterns: OPTIMIZED_IMAGE_HOSTS.map((hostname) => ({
+      protocol: 'https' as const,
+      hostname,
+    })),
   },
 };
 

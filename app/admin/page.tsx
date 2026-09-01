@@ -8,15 +8,35 @@ export default function AdminLogin() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const router = useRouter();
 
-    const handleLogin = (e: React.FormEvent) => {
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (username === 'admin' && password === 'spirit2024') {
-            localStorage.setItem('isAdminLoggedIn', 'true');
-            router.push('/admin/dashboard');
-        } else {
-            setError('Invalid credentials');
+        setError('');
+        setIsSubmitting(true);
+
+        try {
+            // Credentials are verified on the server; a signed, httpOnly session
+            // cookie is what actually unlocks the dashboard and the write APIs.
+            const res = await fetch('/api/admin/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+
+            if (res.ok) {
+                router.replace('/admin/dashboard');
+                router.refresh();
+                return;
+            }
+
+            const data = await res.json().catch(() => null);
+            setError(data?.error || 'Invalid credentials');
+        } catch {
+            setError('Could not reach the server. Please try again.');
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -37,6 +57,7 @@ export default function AdminLogin() {
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
                         className="admin-input"
+                        autoComplete="username"
                         required
                     />
                 </div>
@@ -48,6 +69,7 @@ export default function AdminLogin() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         className="admin-input"
+                        autoComplete="current-password"
                         required
                     />
                 </div>
@@ -57,8 +79,9 @@ export default function AdminLogin() {
                 <button
                     type="submit"
                     className="admin-btn-primary"
+                    disabled={isSubmitting}
                 >
-                    Enter Sanctum
+                    {isSubmitting ? 'Verifying...' : 'Enter Sanctum'}
                 </button>
             </form>
         </div>

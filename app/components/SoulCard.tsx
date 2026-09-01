@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, Calendar, User as UserIcon } from 'lucide-react';
 import Image from 'next/image';
 import { User } from '../lib/mockData';
+import { isOptimizableImage } from '../lib/imageHosts';
 
 interface SoulCardProps {
     title?: string;
@@ -37,7 +38,7 @@ export default function SoulCard({ title, users, location, date, showDetails }: 
                                                     width={32}
                                                     height={32}
                                                     className="avatar-img"
-                                                    unoptimized={true}
+                                                    unoptimized={!isOptimizableImage(user.avatarUrl)}
                                                 />
                                             </div>
                                         ))

@@ -3,6 +3,7 @@
 import { useRef, useEffect } from 'react';
 import SoulCard from './SoulCard';
 import { Video, User } from '../lib/mockData';
+import { parseYoutubeId } from '../lib/youtube';
 
 import YouTube, { YouTubeEvent, YouTubePlayer } from 'react-youtube';
 
@@ -146,14 +147,7 @@ export default function VideoFeed({ isMuted, showDetails, videos, users, activeV
                 const videoUsers = video.userIds.map(id => users.find(u => u.id === id)).filter(Boolean) as User[];
 
                 // Parse videoId just in case the database contains a raw URL
-                let videoId = video.youtubeId;
-                if (videoId.includes('youtu.be/')) {
-                    videoId = videoId.split('youtu.be/')[1].split('?')[0];
-                } else if (videoId.includes('v=')) {
-                    videoId = videoId.split('v=')[1].split('&')[0];
-                } else if (videoId.includes('/shorts/')) {
-                    videoId = videoId.split('/shorts/')[1].split('?')[0];
-                }
+                const videoId = parseYoutubeId(video.youtubeId);
 
                 const opts = {
                     height: '100%',
